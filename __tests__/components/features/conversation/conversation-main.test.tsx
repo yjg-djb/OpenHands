@@ -146,8 +146,10 @@ vi.mock(
     const { createPortal } = require("react-dom");
     return {
       AutomationSetupPanel: ({
+        conversationId,
         toolbarPortal,
       }: {
+        conversationId?: string | null;
         toolbarPortal?: HTMLElement | null;
       }) => (
         <>
@@ -157,7 +159,10 @@ vi.mock(
                 toolbarPortal,
               )
             : null}
-          <div data-testid="automation-setup-panel" />
+          <div
+            data-testid="automation-setup-panel"
+            data-conversation-id={conversationId ?? ""}
+          />
         </>
       ),
     };
@@ -249,6 +254,10 @@ describe("ConversationMain - Layout Transition Stability", () => {
     renderConversationMain();
 
     expect(screen.getByTestId("automation-setup-topbar")).toBeInTheDocument();
+    expect(screen.getByTestId("automation-setup-panel")).toHaveAttribute(
+      "data-conversation-id",
+      "conv-1",
+    );
     expect(screen.queryByTestId("chat-pane-header")).not.toBeInTheDocument();
     expect(
       screen.getByTestId("automation-setup-conversation-title"),
@@ -281,7 +290,10 @@ describe("ConversationMain - Layout Transition Stability", () => {
     renderConversationMain();
 
     expect(screen.getByTestId("automation-setup-topbar")).toBeInTheDocument();
-    expect(screen.getByTestId("automation-setup-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("automation-setup-panel")).toHaveAttribute(
+      "data-conversation-id",
+      "conv-1",
+    );
     expect(
       screen.getByTestId("automation-setup-docked-composer"),
     ).toBeInTheDocument();

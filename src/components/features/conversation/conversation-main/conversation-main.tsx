@@ -377,6 +377,7 @@ export function ConversationMain() {
           >
             <AutomationSetupPanel
               draft={automationSetupDraft}
+              conversationId={conversationId}
               toolbarPortal={automationToolbarElement}
               showInlineHeader={false}
               onClose={closeAutomationSetup}
@@ -414,6 +415,7 @@ export function ConversationMain() {
                 {automationSetupDraft ? (
                   <AutomationSetupPanel
                     draft={automationSetupDraft}
+                    conversationId={conversationId}
                     toolbarPortal={automationToolbarElement}
                     showInlineHeader={false}
                     onClose={closeAutomationSetup}
