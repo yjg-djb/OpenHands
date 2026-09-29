@@ -13,6 +13,7 @@ let mockIsMobile = false;
 let mockIsRightPanelShown = false;
 let mockLeftWidth = 50;
 let mockHasAutomationSetupHandoff = false;
+let mockActiveConversationTags: Record<string, string> | null = null;
 
 const mockNavigate = vi.fn();
 const mockSetHasRightPanelToggled = vi.fn();
@@ -57,7 +58,7 @@ vi.mock("#/api/automation-setup-handoff-store", () => ({
 
 vi.mock("#/hooks/query/use-active-conversation", () => ({
   useActiveConversation: () => ({
-    data: { title: "Daily Morning Haiku" },
+    data: { title: "Daily Morning Haiku", tags: mockActiveConversationTags },
   }),
 }));
 
@@ -198,11 +199,24 @@ describe("ConversationMain - Layout Transition Stability", () => {
     mockIsRightPanelShown = false;
     mockLeftWidth = 50;
     mockHasAutomationSetupHandoff = false;
+    mockActiveConversationTags = null;
     chatInterfaceUnmount.mockClear();
     mockNavigate.mockClear();
     mockSetHasRightPanelToggled.mockClear();
     mockSetIsRightPanelShown.mockClear();
     mockClearAutomationSetupHandoff.mockClear();
+  });
+
+  it("opens automation setup mode when the conversation has a draft tag", async () => {
+    mockActiveConversationTags = { automationsetup: "draft" };
+
+    renderConversationMain();
+
+    expect(
+      await screen.findByTestId("automation-setup-panel"),
+    ).toBeInTheDocument();
+    expect(mockSetHasRightPanelToggled).toHaveBeenCalledWith(true);
+    expect(mockSetIsRightPanelShown).toHaveBeenCalledWith(true);
   });
 
   it.each([
@@ -211,7 +225,10 @@ describe("ConversationMain - Layout Transition Stability", () => {
   ])("renders ChatInterface at %s width", (_name, isMobile) => {
     mockIsMobile = isMobile;
     renderConversationMain();
-    expect(screen.getByTestId("chat-interface")).toBeInTheDocument();
+    expect(screen.getByTestId("chat-interface")).toHaveAttribute(
+      "data-show-git-control-bar",
+      "true",
+    );
   });
 
   it.each([
@@ -246,8 +263,7 @@ describe("ConversationMain - Layout Transition Stability", () => {
     expect(screen.getByTestId("chat-interface")).toBeInTheDocument();
   });
 
-  it("uses a single automation setup top bar with splash back navigation", async () => {
-    const user = userEvent.setup();
+  it("uses a single automation setup top bar", () => {
     mockIsRightPanelShown = true;
     mockHasAutomationSetupHandoff = true;
 
@@ -275,10 +291,9 @@ describe("ConversationMain - Layout Transition Stability", () => {
       "data-composer-placeholder",
       "AUTOMATION_SETUP$CONVERSATION_COMPOSER_PLACEHOLDER",
     );
-
-    await user.click(screen.getByTestId("automation-setup-back"));
-
-    expect(mockNavigate).toHaveBeenCalledWith("/");
+    expect(
+      screen.queryByTestId("automation-setup-back"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the automation form on a narrow window and toggles to the styled conversation", async () => {
