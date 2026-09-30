@@ -22,6 +22,7 @@ import {
 } from "#/types/automation";
 import { getAutomationRunDisplay } from "#/utils/automation-run-display";
 import type {
+  DashboardCreatedByValue,
   DashboardSortValue,
   DashboardStatusValue,
   DashboardTriggerValue,
@@ -203,6 +204,23 @@ const TRIGGER_PREDICATES: Record<
   schedule: (automation) => automation.trigger.type !== "event",
 };
 
+/**
+ * The "created by" ownership claim the list page resolves per backend: local
+ * owns every automation, cloud compares `user_id` with the signed-in member.
+ * Null while the caller's cloud identity is still resolving — "me" then
+ * matches nothing, the same conservative stance the creator escape hatch
+ * takes, and "others" (its complement) matches everything.
+ */
+export type AutomationOwnership = ((automation: Automation) => boolean) | null;
+
+const CREATED_BY_PREDICATES: Record<
+  Exclude<DashboardCreatedByValue, "all">,
+  (mine: boolean) => boolean
+> = {
+  me: (mine) => mine,
+  others: (mine) => !mine,
+};
+
 function runCount(automation: Automation, byId: Summaries): number {
   return byId.get(automation.id)?.summary?.total ?? 0;
 }
@@ -229,6 +247,9 @@ export interface DashboardViewState {
   search: string;
   status: DashboardStatusValue;
   trigger: DashboardTriggerValue;
+  createdBy: DashboardCreatedByValue;
+  /** The caller's ownership claim; null while cloud identity is unresolved. */
+  isMine: AutomationOwnership;
   sort: DashboardSortValue;
 }
 
@@ -255,6 +276,12 @@ export function applyDashboardView(
         !TRIGGER_PREDICATES[view.trigger](automation)
       ) {
         return false;
+      }
+      if (view.createdBy !== "all") {
+        // An automation without a user_id is never the caller's own, so it
+        // lands on the "others" side of the split.
+        const mine = view.isMine?.(automation) ?? false;
+        if (!CREATED_BY_PREDICATES[view.createdBy](mine)) return false;
       }
       return true;
     })

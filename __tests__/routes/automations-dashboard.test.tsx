@@ -227,14 +227,15 @@ describe("AutomationsList — manifest-declared dashboard", () => {
     ]);
   });
 
-  it("nests status, trigger, and sort dropdowns inside one Filters control", async () => {
+  it("nests status, trigger, created-by, and sort dropdowns inside one Filters control", async () => {
     // Arrange
     const user = userEvent.setup();
     await renderDashboardWithSettledInsights();
 
-    // Assert — the three filters stay inside the combined menu until opened.
+    // Assert — the four filters stay inside the combined menu until opened.
     expect(screen.queryByTestId("automations-filter-status")).toBeNull();
     expect(screen.queryByTestId("automations-filter-trigger")).toBeNull();
+    expect(screen.queryByTestId("automations-filter-created-by")).toBeNull();
     expect(screen.queryByTestId("automations-sort")).toBeNull();
 
     // Act
@@ -257,6 +258,11 @@ describe("AutomationsList — manifest-declared dashboard", () => {
     ).toBeInTheDocument();
     expect(
       within(screen.getByTestId("automations-filters-menu")).getByTestId(
+        "automations-filter-created-by",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("automations-filters-menu")).getByTestId(
         "automations-sort",
       ),
     ).toBeInTheDocument();
@@ -268,6 +274,11 @@ describe("AutomationsList — manifest-declared dashboard", () => {
     expect(
       within(screen.getByTestId("automations-filters-menu")).getByText(
         "Filter widgets by trigger",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("automations-filters-menu")).getByText(
+        "Filter widgets by maker",
       ),
     ).toBeInTheDocument();
     expect(
@@ -333,6 +344,54 @@ describe("AutomationsList — manifest-declared dashboard", () => {
       expect(screen.queryByTestId("automation-card-a-ok")).toBeNull();
     });
     expect(screen.getByTestId("automation-card-a-broken")).toBeInTheDocument();
+  });
+
+  it("keeps every automation under created-by me on the local backend", async () => {
+    // Arrange — the local user owns every automation, so "me" keeps all.
+    const user = userEvent.setup();
+    await renderDashboardWithSettledInsights();
+
+    // Act
+    await user.click(
+      within(screen.getByTestId("automations-filters")).getByTestId(
+        "dropdown-trigger",
+      ),
+    );
+    await user.click(
+      within(screen.getByTestId("automations-filter-created-by")).getByTestId(
+        "dropdown-trigger",
+      ),
+    );
+    await user.click(screen.getByTestId("automations-filter-created-by-me"));
+
+    // Assert
+    await screen.findByTestId("automation-card-a-ok");
+    expect(screen.getByTestId("automation-card-a-broken")).toBeInTheDocument();
+  });
+
+  it("empties the list under created-by others on the local backend", async () => {
+    // Arrange — nothing on a local backend is another member's.
+    const user = userEvent.setup();
+    await renderDashboardWithSettledInsights();
+
+    // Act
+    await user.click(
+      within(screen.getByTestId("automations-filters")).getByTestId(
+        "dropdown-trigger",
+      ),
+    );
+    await user.click(
+      within(screen.getByTestId("automations-filter-created-by")).getByTestId(
+        "dropdown-trigger",
+      ),
+    );
+    await user.click(
+      screen.getByTestId("automations-filter-created-by-others"),
+    );
+
+    // Assert — the filtered empty state carries the way back out.
+    await screen.findByTestId("automations-filtered-empty");
+    expect(screen.queryByTestId("automation-card-a-ok")).toBeNull();
   });
 
   it("clears search and filters back to a neutral view", async () => {

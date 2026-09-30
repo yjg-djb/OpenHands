@@ -6,6 +6,7 @@ import { EnumFilterDropdown } from "#/components/shared/filters/enum-filter-drop
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import type { DashboardSpec } from "#/manifests/automation-interface";
 import type {
+  DashboardCreatedByValue,
   DashboardSortValue,
   DashboardStatusValue,
   DashboardTriggerValue,
@@ -40,9 +41,11 @@ interface AutomationsDashboardControlsProps {
   spec: DashboardSpec;
   status: DashboardStatusValue;
   trigger: DashboardTriggerValue;
+  createdBy: DashboardCreatedByValue;
   sort: DashboardSortValue;
   onStatusChange: (value: DashboardStatusValue) => void;
   onTriggerChange: (value: DashboardTriggerValue) => void;
+  onCreatedByChange: (value: DashboardCreatedByValue) => void;
   onSortChange: (value: DashboardSortValue) => void;
 }
 
@@ -56,9 +59,11 @@ export function AutomationsDashboardControls({
   spec,
   status,
   trigger,
+  createdBy,
   sort,
   onStatusChange,
   onTriggerChange,
+  onCreatedByChange,
   onSortChange,
 }: AutomationsDashboardControlsProps) {
   const { t } = useTranslation("openhands");
@@ -69,18 +74,24 @@ export function AutomationsDashboardControls({
 
   const statusFilter = spec.filters.find((filter) => filter.id === "status");
   const triggerFilter = spec.filters.find((filter) => filter.id === "trigger");
+  const createdByFilter = spec.filters.find(
+    (filter) => filter.id === "created_by",
+  );
   const activeCount = [
     statusFilter && status !== statusFilter.options[0]?.value,
     triggerFilter && trigger !== triggerFilter.options[0]?.value,
+    createdByFilter && createdBy !== createdByFilter.options[0]?.value,
     sort !== spec.sort.default,
   ].filter(Boolean).length;
   const filtersLabel = t(I18nKey.AUTOMATIONS$FILTERS);
   const defaultStatus = statusFilter?.options[0]?.value;
   const defaultTrigger = triggerFilter?.options[0]?.value;
+  const defaultCreatedBy = createdByFilter?.options[0]?.value;
 
   const resetAll = () => {
     if (defaultStatus) onStatusChange(defaultStatus);
     if (defaultTrigger) onTriggerChange(defaultTrigger);
+    if (defaultCreatedBy) onCreatedByChange(defaultCreatedBy);
     onSortChange(spec.sort.default);
   };
 
@@ -148,6 +159,19 @@ export function AutomationsDashboardControls({
                 options={triggerFilter.options.map((option) => option.value)}
                 labelByValue={toLabelMap(triggerFilter.options)}
                 ariaLabel={triggerFilter.label}
+                fullWidth
+              />
+            </FilterField>
+          ) : null}
+          {createdByFilter ? (
+            <FilterField label={createdByFilter.label}>
+              <EnumFilterDropdown
+                testId="automations-filter-created-by"
+                value={createdBy}
+                onChange={onCreatedByChange}
+                options={createdByFilter.options.map((option) => option.value)}
+                labelByValue={toLabelMap(createdByFilter.options)}
+                ariaLabel={createdByFilter.label}
                 fullWidth
               />
             </FilterField>

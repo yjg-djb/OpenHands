@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateInterfaceManifest } from "#/manifests/interface-validation";
 import type { InterfaceValidationContext } from "#/manifests/interface-validation";
 import type {
+  DashboardCreatedByValue,
   InterfaceIconSlug,
   InterfaceManifest,
   InterfaceSubPageId,
@@ -310,6 +311,32 @@ describe("validateInterfaceManifest", () => {
                 options: [
                   { value: "active", label: "Live" },
                   { value: "disabled", label: "Off" },
+                ],
+              },
+            ],
+          },
+        },
+      }),
+    ],
+    [
+      // Ownership filtering knows only the caller and everyone else.
+      "a created_by filter offering an unknown ownership value",
+      (manifest) => ({
+        ...manifest,
+        pages: {
+          ...manifest.pages,
+          list: {
+            ...manifest.pages.list,
+            filters: [
+              {
+                id: "created_by",
+                label: "Filter widgets by maker",
+                options: [
+                  { value: "all", label: "Every maker" },
+                  {
+                    value: "team" as DashboardCreatedByValue,
+                    label: "Made by the team",
+                  },
                 ],
               },
             ],

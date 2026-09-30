@@ -16,6 +16,7 @@ import {
   useImportAutomation,
 } from "#/hooks/query/use-automations";
 import { useAutomationHealth } from "#/hooks/query/use-automation-health";
+import { useAutomationsOwnership } from "#/hooks/use-automations-ownership";
 import { useActiveBackend } from "#/contexts/active-backend-context";
 import { useNavigation } from "#/context/navigation-context";
 import { SearchInput } from "#/components/features/automations/search-input";
@@ -58,6 +59,7 @@ import {
 } from "#/manifests/automation-insights";
 import { interpolateValues } from "#/manifests/manifest-template";
 import type {
+  DashboardCreatedByValue,
   DashboardSortValue,
   DashboardStatusValue,
   DashboardTriggerValue,
@@ -101,6 +103,8 @@ export default function AutomationsList() {
   const [statusFilter, setStatusFilter] = useState<DashboardStatusValue>("all");
   const [triggerFilter, setTriggerFilter] =
     useState<DashboardTriggerValue>("all");
+  const [createdByFilter, setCreatedByFilter] =
+    useState<DashboardCreatedByValue>("all");
   const [sortValue, setSortValue] = useState<DashboardSortValue>(
     dashboardSpec?.sort.default ?? "last-run",
   );
@@ -141,6 +145,9 @@ export default function AutomationsList() {
   const runSummaries = useAutomationRunSummaries(data?.automations ?? [], {
     enabled: isBackendHealthy && dashboard !== null,
   });
+
+  // The "created by" filter's ownership claim, resolved per backend kind.
+  const isMine = useAutomationsOwnership();
   const { trackPrebuiltAutomationEnabled, trackAutomationExported } =
     useTracking();
   const toggleMutation = useToggleAutomation();
@@ -161,6 +168,8 @@ export default function AutomationsList() {
         search: searchQuery,
         status: statusFilter,
         trigger: triggerFilter,
+        createdBy: createdByFilter,
+        isMine,
         sort: sortValue,
       },
       runSummaries,
@@ -171,6 +180,8 @@ export default function AutomationsList() {
     searchQuery,
     statusFilter,
     triggerFilter,
+    createdByFilter,
+    isMine,
     sortValue,
     runSummaries,
   ]);
@@ -287,6 +298,7 @@ export default function AutomationsList() {
     setSearchQuery("");
     setStatusFilter("all");
     setTriggerFilter("all");
+    setCreatedByFilter("all");
   };
 
   const overviewTiles = useMemo(() => {
@@ -417,9 +429,11 @@ export default function AutomationsList() {
             spec={dashboard.spec}
             status={statusFilter}
             trigger={triggerFilter}
+            createdBy={createdByFilter}
             sort={sortValue}
             onStatusChange={setStatusFilter}
             onTriggerChange={setTriggerFilter}
+            onCreatedByChange={setCreatedByFilter}
             onSortChange={setSortValue}
           />
         )}

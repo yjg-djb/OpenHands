@@ -72,6 +72,12 @@ vi.mock("#/hooks/use-automation-permissions", () => ({
   useAutomationPermissions: () => ({ canManage: mocks.canManage }),
 }));
 
+vi.mock("#/hooks/use-automations-ownership", () => ({
+  // The plain list runs on a local backend, where every automation is the
+  // local user's own.
+  useAutomationsOwnership: () => () => true,
+}));
+
 vi.mock("#/context/navigation-context", () => ({
   useNavigation: () => ({ navigate: mocks.navigate }),
 }));

@@ -316,6 +316,8 @@ describe("applyDashboardView", () => {
     search: "",
     status: "all",
     trigger: "all",
+    createdBy: "all",
+    isMine: null,
     sort: "name",
   } as const;
 
@@ -349,6 +351,73 @@ describe("applyDashboardView", () => {
       scheduled: scheduled.map((a) => a.id),
       events: events.map((a) => a.id),
     }).toEqual({ scheduled: ["healthy", "failing"], events: ["evented"] });
+  });
+
+  it("keeps only the caller's automations under the me ownership", () => {
+    // Arrange — the caller created the healthy automation only.
+    const isMine = (automation: Automation) => automation.id === "healthy";
+
+    // Act
+    const mine = applyDashboardView(
+      all,
+      { ...neutral, createdBy: "me", isMine },
+      byId,
+    );
+    const others = applyDashboardView(
+      all,
+      { ...neutral, createdBy: "others", isMine },
+      byId,
+    );
+
+    // Assert
+    expect({
+      mine: mine.map((a) => a.id),
+      others: others.map((a) => a.id),
+    }).toEqual({
+      mine: ["healthy"],
+      others: ["failing", "evented"],
+    });
+  });
+
+  it("counts an automation without a user_id as another member's", () => {
+    // Arrange — no ownership claim is possible on a user_id-less automation.
+    const anonymous = createAutomation({ id: "anonymous", name: "E anon" });
+    const isMine = (automation: Automation) => automation.id === "healthy";
+
+    // Act
+    const mine = applyDashboardView(
+      [healthy, anonymous],
+      { ...neutral, createdBy: "me", isMine },
+      byId,
+    );
+
+    // Assert
+    expect(mine.map((a) => a.id)).toEqual(["healthy"]);
+  });
+
+  it("matches nothing under me while the ownership claim is unresolved", () => {
+    // Arrange — a null claim, as while the cloud identity is loading.
+    // Act
+    const mine = applyDashboardView(
+      all,
+      { ...neutral, createdBy: "me", isMine: null },
+      byId,
+    );
+    const others = applyDashboardView(
+      all,
+      { ...neutral, createdBy: "others", isMine: null },
+      byId,
+    );
+
+    // Assert — nothing is confirmed the caller's yet; the complement then
+    // holds everything, mirroring how the creator escape hatch stays closed.
+    expect({
+      mine: mine.map((a) => a.id),
+      others: others.map((a) => a.id),
+    }).toEqual({
+      mine: [],
+      others: ["healthy", "failing", "evented"],
+    });
   });
 
   it("orders by lifetime run count under the runs sort", () => {
