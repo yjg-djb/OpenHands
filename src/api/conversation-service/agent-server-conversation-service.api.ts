@@ -382,6 +382,7 @@ function requireAppConversation(
 export interface CreateConversationOptions {
   initialUserMsg?: string;
   automationSetup?: boolean;
+  automationSetupTags?: Record<string, string>;
   conversationInstructions?: string;
   plugins?: PluginSpec[];
   metadata?: ConversationMetadata | null;
@@ -442,6 +443,7 @@ class AgentServerConversationService {
     const {
       initialUserMsg,
       automationSetup,
+      automationSetupTags,
       conversationInstructions,
       plugins,
       metadata,
@@ -480,7 +482,7 @@ class AgentServerConversationService {
         agent_profile_id: agentProfileId ?? null,
         trigger: "gui",
         ...(automationSetup
-          ? { tags: buildAutomationSetupModeTags(null) }
+          ? { tags: buildAutomationSetupModeTags(automationSetupTags) }
           : {}),
         ...(automationSetup && agentProfileKind !== "acp"
           ? {
@@ -519,6 +521,7 @@ class AgentServerConversationService {
       settings,
       query: initialUserMsg,
       automationSetup,
+      automationSetupTags,
       conversationInstructions,
       plugins,
       conversationId,
